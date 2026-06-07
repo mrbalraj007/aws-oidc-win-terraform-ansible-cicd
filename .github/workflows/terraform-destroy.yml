@@ -15,6 +15,10 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    env:
+      TF_VAR_key_name: ${{ secrets.TF_VAR_key_name }}
+      TF_VAR_ansible_windows_password: ${{ secrets.TF_VAR_ansible_windows_password }}
+      TF_VAR_tf_state_bucket: ${{ secrets.TF_VAR_tf_state_bucket }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
