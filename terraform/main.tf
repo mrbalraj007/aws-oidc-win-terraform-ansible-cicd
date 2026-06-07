@@ -78,6 +78,8 @@ resource "aws_security_group" "windows_sg" {
   description = "Security group for Windows EC2 - WinRM + RDP"
   vpc_id      = data.aws_vpc.default.id
 
+  depends_on = [data.aws_vpc.default]
+
   # WinRM HTTP (Ansible uses this)
   ingress {
     description = "WinRM HTTP"
@@ -140,11 +142,15 @@ resource "aws_iam_role" "ec2_role" {
 resource "aws_iam_role_policy_attachment" "ssm_policy" {
   role       = aws_iam_role.ec2_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+
+  depends_on = [aws_iam_role.ec2_role]
 }
 
 resource "aws_iam_instance_profile" "ec2_profile" {
   name = "${var.project_name}-ec2-profile"
   role = aws_iam_role.ec2_role.name
+
+  depends_on = [aws_iam_role.ec2_role]
 }
 
 # -------------------------------------------------------
@@ -185,6 +191,11 @@ resource "aws_spot_instance_request" "windows" {
   lifecycle {
     ignore_changes = [user_data]
   }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.ssm_policy,
+    aws_iam_instance_profile.ec2_profile,
+  ]
 }
 
 # Tag the underlying instance (spot requests create the instance separately)
