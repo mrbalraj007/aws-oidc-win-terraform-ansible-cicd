@@ -1,6 +1,6 @@
 # -------------------------------------------------------
 # userdata.ps1
-# Runs at first boot – enables WinRM so Ansible can connect
+# Runs at first boot – enables WinRM so Ansible can connect to EC2 instances and configures a local admin user for Ansible use.
 # -------------------------------------------------------
 
 # Set the local Ansible admin password
