@@ -49,12 +49,12 @@ jobs:
           echo "windows_public_ip=$(terraform output -raw windows_public_ip)" >> $GITHUB_OUTPUT
 
       - name: Save IP to file
+        working-directory: ./terraform
         run: echo ${{ steps.ip.outputs.windows_public_ip }} > windows_public_ip.txt
 
       - name: Upload IP as artifact
+        working-directory: ./terraform
         uses: actions/upload-artifact@v4
         with:
           name: windows-public-ip
           path: windows_public_ip.txt
-
-          # this will be used in the Ansible workflow to connect to the Windows instance and run Ansible playbooks against it
