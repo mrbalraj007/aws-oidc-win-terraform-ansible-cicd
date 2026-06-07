@@ -50,11 +50,25 @@ jobs:
         run: |
           ./scripts/04_wait_for_winrm.sh ${{ steps.windows_ip.outputs.windows_ip }}
 
+      - name: Create static inventory from IP
+        run: |
+          cat > windows_inventory.ini << EOF
+          [windows]
+          ${{ steps.windows_ip.outputs.windows_ip }}
+
+          [windows:vars]
+          ansible_connection=winrm
+          ansible_winrm_transport=basic
+          ansible_winrm_port=5985
+          ansible_winrm_scheme=http
+          ansible_winrm_server_cert_validation=ignore
+          ansible_user=ansible_admin
+          ansible_password=${{ secrets.TF_VAR_ansible_windows_password }}
+          EOF
+
       - name: Run Ansible Playbook
         env:
           ANSIBLE_HOST_KEY_CHECKING: False
           ANSIBLE_CONFIG: ansible/ansible.cfg
-          ANSIBLE_WINRM_PASSWORD: ${{ secrets.TF_VAR_ansible_windows_password }}
-          PROJECT_TAG: terraform-ansible-demo
         run: |
-          ansible-playbook -i ansible/inventories/aws_ec2_inventory.py ansible/playbooks/windows_setup.yml
+          ansible-playbook -i windows_inventory.ini ansible/playbooks/windows_setup.yml
