@@ -56,3 +56,5 @@ jobs:
         with:
           name: windows-public-ip
           path: windows_public_ip.txt
+
+          # this will be used in the Ansible workflow to connect to the Windows instance and run Ansible playbooks against it
