@@ -190,7 +190,7 @@ fi
 echo ""
 echo "==> Cleaning up GitHub Secrets..."
 if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
-  for SECRET in AWS_ROLE_ARN TF_VAR_tf_state_bucket TF_VAR_key_name; do
+  for SECRET in AWS_ROLE_ARN TF_VAR_tf_state_bucket TF_VAR_key_name TF_VAR_ansible_windows_password; do
     if gh secret list --repo "$GITHUB_ORG/$GITHUB_REPO" 2>/dev/null | grep -q "^${SECRET} "; then
       echo "   Deleting GitHub Secret: $SECRET"
       gh secret delete "$SECRET" --repo "$GITHUB_ORG/$GITHUB_REPO" 2>/dev/null \
@@ -206,6 +206,7 @@ else
   echo "      - AWS_ROLE_ARN"
   echo "      - TF_VAR_tf_state_bucket"
   echo "      - TF_VAR_key_name"
+  echo "      - TF_VAR_ansible_windows_password"
 fi
 
 echo ""
@@ -215,5 +216,5 @@ echo "  Deleted: IAM Role          ($ROLE_NAME)"
 echo "  Deleted: OIDC Provider     (token.actions.githubusercontent.com)"
 echo "  Deleted: S3 Bucket         ($BUCKET_NAME)"
 echo "  Deleted: EC2 Key Pair      ($KEY_NAME)"
-echo "  Cleaned: GitHub Secrets    (AWS_ROLE_ARN, TF_VAR_tf_state_bucket, TF_VAR_key_name)"
+echo "  Cleaned: GitHub Secrets    (AWS_ROLE_ARN, TF_VAR_tf_state_bucket, TF_VAR_key_name, TF_VAR_ansible_windows_password)"
 echo "=============================================="

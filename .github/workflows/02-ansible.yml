@@ -48,7 +48,10 @@ jobs:
 
       - name: Wait for WinRM to be available
         run: |
-          ./scripts/04_wait_for_winrm.sh ${{ steps.windows_ip.outputs.windows_ip }}
+          ./scripts/04_wait_for_winrm.sh \
+            "${{ steps.windows_ip.outputs.windows_ip }}" \
+            300 \
+            "${{ secrets.TF_VAR_ansible_windows_password }}"
 
       - name: Create static inventory from IP
         run: |

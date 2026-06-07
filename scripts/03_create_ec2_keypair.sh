@@ -14,6 +14,7 @@ set -euo pipefail
 AWS_REGION="us-east-1"
 KEY_NAME="terraform-ansible-demo-key"
 KEY_DIR="$HOME/.ssh"
+ANSIBLE_WINRM_PASSWORD="MyS0cureP0ss2026"
 
 echo "==> Creating EC2 Key Pair: $KEY_NAME"
 echo "==> Region: $AWS_REGION"
@@ -52,6 +53,13 @@ if command -v gh >/dev/null 2>&1; then
         else
             echo "   ! Failed to set secret TF_VAR_key_name. You may need to set it manually."
         fi
+
+        echo "==> Adding TF_VAR_ansible_windows_password secret to GitHub Actions repository..."
+        if gh secret set TF_VAR_ansible_windows_password --body "$ANSIBLE_WINRM_PASSWORD" >/dev/null 2>&1; then
+            echo "   Secret TF_VAR_ansible_windows_password set successfully."
+        else
+            echo "   ! Failed to set secret TF_VAR_ansible_windows_password. You may need to set it manually."
+        fi
     else
         echo "   ! GitHub CLI is not authenticated. Please run 'gh auth login' and then rerun this script to automatically set the secret."
         echo "   ! Alternatively, you can set the secret manually as shown below."
@@ -66,6 +74,7 @@ echo "=============================================="
 echo "Key Pair setup complete!"
 echo "Add these secrets to GitHub Actions:"
 echo "  TF_VAR_key_name = terraform-ansible-demo-key"
+echo "  TF_VAR_ansible_windows_password = $ANSIBLE_WINRM_PASSWORD"
 echo ""
 echo "If you need to decode the Windows password:"
 echo "  aws ec2 get-password-data \\"
