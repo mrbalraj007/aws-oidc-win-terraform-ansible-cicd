@@ -37,8 +37,7 @@ jobs:
             -backend-config="bucket=${{ secrets.TF_VAR_tf_state_bucket }}" \
             -backend-config="key=terraform-ansible-cicd/terraform.tfstate" \
             -backend-config="region=us-east-1" \
-            -backend-config="encrypt=true" \
-            -backend-config="use_lockfile=true"
+            -backend-config="encrypt=true" 
 
       - name: Terraform Destroy
         working-directory: ./terraform
