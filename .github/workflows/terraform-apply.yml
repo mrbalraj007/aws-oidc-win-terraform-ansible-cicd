@@ -52,7 +52,7 @@ jobs:
         run: echo ${{ steps.ip.outputs.windows_public_ip }} > windows_public_ip.txt
 
       - name: Upload IP as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: windows-public-ip
           path: windows_public_ip.txt
