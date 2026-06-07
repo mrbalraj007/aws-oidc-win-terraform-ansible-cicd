@@ -1,0 +1,90 @@
+---
+# ansible/playbooks/windows_setup.yml
+# ------------------------------------
+# Connects to all Windows EC2 instances and:
+#   1. Creates C:\TestDirectory
+#   2. Creates C:\TestDirectory\test.txt with timestamp content
+#
+# Run locally:
+#   ansible-playbook -i inventories/aws_ec2_inventory.py playbooks/windows_setup.yml
+#
+# Requirements:
+#   pip install ansible pywinrm
+
+- name: Windows EC2 - Initial Setup
+  hosts: windows
+  gather_facts: true
+
+  vars:
+    test_directory: 'C:\TestDirectory'
+    test_file:      'C:\TestDirectory\test.txt'
+
+  tasks:
+
+    - name: "PING | Verify WinRM connection is working"
+      ansible.windows.win_ping:
+      register: ping_result
+
+    - name: "PING | Show connection result"
+      ansible.builtin.debug:
+        msg: "Connected to {{ inventory_hostname }} — ping result: {{ ping_result.ping }}"
+
+    # ---- Directory creation ----
+    - name: "DIRECTORY | Create TestDirectory on C drive"
+      ansible.windows.win_file:
+        path: "{{ test_directory }}"
+        state: directory
+
+    - name: "DIRECTORY | Confirm directory exists"
+      ansible.windows.win_stat:
+        path: "{{ test_directory }}"
+      register: dir_stat
+
+    - name: "DIRECTORY | Show directory status"
+      ansible.builtin.debug:
+        msg: "Directory {{ test_directory }} exists: {{ dir_stat.stat.exists }}"
+
+    # ---- File creation ----
+    - name: "FILE | Create test.txt with content"
+      ansible.windows.win_copy:
+        content: |
+          Hello from Ansible!
+          ----------------------------------------
+          Instance  : {{ inventory_hostname }}
+          Host Name : {{ ansible_hostname | default('unknown') }}
+          Date/Time : {{ ansible_date_time.iso8601 | default('unknown') }}
+          Managed By: Ansible + GitHub Actions CI/CD
+          Project   : terraform-ansible-demo
+          ----------------------------------------
+        dest: "{{ test_file }}"
+
+    - name: "FILE | Verify test.txt was created"
+      ansible.windows.win_stat:
+        path: "{{ test_file }}"
+      register: file_stat
+
+    - name: "FILE | Show file details"
+      ansible.builtin.debug:
+        msg:
+          - "File path : {{ test_file }}"
+          - "Exists    : {{ file_stat.stat.exists }}"
+          - "Size bytes: {{ file_stat.stat.size | default(0) }}"
+
+    # ---- Read back the file to confirm ----
+    - name: "FILE | Read test.txt content"
+      ansible.windows.win_shell: Get-Content "{{ test_file }}"
+      register: file_content
+
+    - name: "FILE | Display test.txt content"
+      ansible.builtin.debug:
+        msg: "{{ file_content.stdout_lines }}"
+
+    # ---- Summary ----
+    - name: "SUMMARY | All tasks completed"
+      ansible.builtin.debug:
+        msg:
+          - "========================================"
+          - "Setup complete on {{ inventory_hostname }}"
+          - "Directory : {{ test_directory }} ✓"
+          - "File      : {{ test_file }} ✓"
+          - "========================================"

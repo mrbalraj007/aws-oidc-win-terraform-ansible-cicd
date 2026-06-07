@@ -21,3 +21,48 @@ rad.json
 *.flf
 #Test results file
 TestResults.xml
+
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+tfplan
+*.tfplan
+override.tf
+override.tf.json
+
+# SSH Keys — NEVER commit private keys
+keys/
+keys/*
+*.pem
+*_rsa
+*_ed25519
+!*_ed25519.pub
+!*_rsa.pub
+
+# Ansible
+*.retry
+ansible/group_vars/all/vault.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Kimchi
+../.kimchi/
+../.kimchi/*
+./.kimchi/*
+/.kimchi/*
+
+
+# Txt files
+.txt
+*.txt
+terraform-ansible-cicd-guide.jsx.txt
+
+# Claud files
+.claud/
+.claud/*
+CLAUDE.md

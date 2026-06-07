@@ -1,0 +1,43 @@
+name: Ansible Provision
+
+on:
+  workflow_run:
+    workflows: ["Terraform Create"]
+    types:
+      - completed
+
+jobs:
+  ansible:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          pip install boto3 botocore ansible
+
+      - name: Wait for WinRM to be available
+        run: |
+          ./scripts/04_wait_for_winrm.sh
+
+      - name: Run Ansible Playbook
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: False
+        run: |
+          ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i ansible/inventories/aws_ec2_inventory.py ansible/playbooks/windows_setup.yml
