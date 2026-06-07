@@ -13,6 +13,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      actions: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,7 +31,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install boto3 botocore ansible
+          pip install boto3 botocore ansible pywinrm
 
       - name: Download Windows Public IP artifact
         uses: actions/download-artifact@v4
@@ -52,5 +53,8 @@ jobs:
       - name: Run Ansible Playbook
         env:
           ANSIBLE_HOST_KEY_CHECKING: False
+          ANSIBLE_CONFIG: ansible/ansible.cfg
+          ANSIBLE_WINRM_PASSWORD: ${{ secrets.TF_VAR_ansible_windows_password }}
+          PROJECT_TAG: terraform-ansible-demo
         run: |
-          ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i ansible/inventories/aws_ec2_inventory.py ansible/playbooks/windows_setup.yml
+          ansible-playbook -i ansible/inventories/aws_ec2_inventory.py ansible/playbooks/windows_setup.yml

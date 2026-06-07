@@ -1,4 +1,3 @@
-<powershell>
 # -------------------------------------------------------
 # userdata.ps1
 # Runs at first boot – enables WinRM so Ansible can connect
@@ -38,7 +37,5 @@ netsh advfirewall firewall add rule name="WinRM HTTPS" protocol=TCP dir=in local
 # Restart WinRM to apply changes
 Restart-Service WinRM
 
-# Signal CloudFormation / SSM that init is done (no-op if not used)
+# Signal that init is done
 Write-Host "WinRM configuration complete."
-</powershell>
-<persist>true</persist>

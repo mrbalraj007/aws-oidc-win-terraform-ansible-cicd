@@ -22,6 +22,11 @@ rad.json
 #Test results file
 TestResults.xml
 
+# backup files
+*.bak
+*.backup
+*.backup.*
+*.tmp
 
 # Terraform
 .terraform/

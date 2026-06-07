@@ -8,12 +8,12 @@
 #   ./scripts/04_wait_for_winrm.sh <public_ip> [max_wait_seconds]
 #
 # Example:
-#   ./scripts/04_wait_for_winrm.sh 13.210.45.67 600
+#   ./scripts/04_wait_for_winrm.sh 13.210.45.67 180
 
 set -euo pipefail
 
 TARGET_IP="${1:-}"
-MAX_WAIT="${2:-600}"   # Default 10 minutes
+MAX_WAIT="${2:-180}"   # Default 3 minutes
 WINRM_PORT=5985
 INTERVAL=15
 
