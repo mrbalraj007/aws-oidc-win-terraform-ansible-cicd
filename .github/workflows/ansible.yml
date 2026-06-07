@@ -36,6 +36,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: windows-public-ip
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
 
       - name: Read Windows Public IP
         id: windows_ip

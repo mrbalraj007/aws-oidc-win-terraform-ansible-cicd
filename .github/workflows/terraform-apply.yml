@@ -52,7 +52,7 @@ jobs:
         working-directory: ./terraform
         run: echo ${{ steps.ip.outputs.windows_public_ip }} > windows_public_ip.txt
       - name: Upload IP as artifact
-        working-directory: ./terraform
-        run: |
-          echo "Uploading IP artifact..."
-          ls -la windows_public_ip.txt
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-public-ip
+          path: ./terraform/windows_public_ip.txt
