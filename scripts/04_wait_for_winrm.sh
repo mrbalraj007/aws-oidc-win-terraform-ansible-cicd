@@ -45,11 +45,14 @@ while [ "$ELAPSED" -lt "$MAX_WAIT" ]; do
   fi
 
   # 2. Try WinRM authentication with ansible_admin user
-  # Uses PowerShell on the CI runner to run a WinRM quickconfig test
+  # Pass password via env var to avoid shell quoting issues
+  export AUTH_PASSWORD="$ANSIBLE_PASSWORD"
   AUTH_RESULT=$(python3 -c "
-import winrm
+import os, winrm
 try:
-    sess = winrm.Session('$TARGET_IP', auth=('ansible_admin', '$ANSIBLE_PASSWORD'))
+    pw = os.environ.get('AUTH_PASSWORD', '')
+    ip = '$TARGET_IP'
+    sess = winrm.Session(ip, auth=('ansible_admin', pw))
     sess.run_cmd('echo test')
     print('OK')
 except Exception as e:

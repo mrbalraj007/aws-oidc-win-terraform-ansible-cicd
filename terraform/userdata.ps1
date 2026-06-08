@@ -3,15 +3,18 @@
 # userdata.ps1
 # Windows EC2 UserData — runs as SYSTEM during first boot.
 # Configures WinRM for Ansible and creates the ansible_admin user.
+# Based on a proven working manual script.
 # -------------------------------------------------------
 
 $ErrorActionPreference = "Stop"
-$logFile = "C:\ProgramData\userdata.log"
+$logFile = "C:\ProgramData\Amazon\userdata.log"
 
 function Write-Log {
     param([string]$Message)
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    "$timestamp  $Message" | Tee-Object -FilePath $logFile -Append
+    $line = "$timestamp  $Message"
+    Write-Host $line
+    Add-Content -Path $logFile -Value $line
 }
 
 Write-Log "=== UserData started ==="
@@ -42,66 +45,73 @@ try {
     Write-Log "User $adminUser added to Administrators."
 } catch {
     Write-Log "ERROR creating user: $_"
-    exit 1
+    # Don't exit — still try to configure WinRM
 }
 
-# ---- Configure WinRM ----
+# ---- Configure WinRM (based on proven working script) ----
 Write-Log "Configuring WinRM..."
 
+# 1. Enable PSRemoting and set network to Private
 try {
-    # Enable the Windows Remote Management service and set startup to Automatic
-    Set-Service WinRM -StartupType Automatic -ErrorAction SilentlyContinue
-
-    # Configure WinRM service settings (allow unencrypted + basic auth)
-    winrm set winrm/config/service/auth '@{Basic="true"}' 2>$null
-    winrm set winrm/config/service '@{AllowUnencrypted="true"}' 2>$null
-
-    # Increase timeouts so Ansible doesn't get kicked off mid-task
-    winrm set winrm/config/winrs '@{MaxMemoryPerShellMB="1024"}' 2>$null
-    winrm set winrm/config/winrm '@{MaxTimeoutms="1800000"}' 2>$null
-
-    # Enable PSRemoting (creates HTTP listener on port 5985)
-    # -SkipNetworkProfileCheck: don't require domain profile on first boot
-    # -Force: overwrite any existing configuration
-    Write-Log "Running Enable-PSRemoting..."
-    Enable-PSRemoting -Force -SkipNetworkProfileCheck 2>&1 | Tee-Object -FilePath $logFile -Append
-
-    Write-Log "WinRM configured successfully."
+    Enable-PSRemoting -Force -SkipNetworkProfileCheck -ErrorAction Stop
+    Write-Log "Enable-PSRemoting completed."
 } catch {
-    Write-Log "ERROR configuring WinRM: $_"
-    exit 1
+    Write-Log "Enable-PSRemoting had issues (continuing): $_"
+}
+try {
+    Set-NetConnectionProfile -NetworkCategory Private -ErrorAction SilentlyContinue
+    Write-Log "Network profile set to Private."
+} catch {
+    Write-Log "Setting network profile had issues (continuing): $_"
 }
 
-# ---- Open firewall rules for WinRM ----
-Write-Log "Configuring Windows Firewall..."
-netsh advfirewall firewall add rule name="WinRM HTTP" dir=in action=allow protocol=TCP localport=5985 2>&1 | Tee-Object -FilePath $logFile -Append
-netsh advfirewall firewall add rule name="WinRM HTTPS" dir=in action=allow protocol=TCP localport=5986 2>&1 | Tee-Object -FilePath $logFile -Append
+# 2. Configure WinRM auth and timeouts
+Write-Log "Setting WinRM config values..."
+winrm set winrm/config '@{MaxTimeoutms="1800000"}'
+if ($LASTEXITCODE -ne 0) { Write-Log "WARNING: MaxTimeoutms failed (non-critical)" }
 
-# ---- Verify WinRM is listening ----
-Write-Log "Verifying WinRM listener..."
-Start-Sleep -Seconds 5
+winrm set winrm/config/winrs '@{MaxMemoryPerShellMB="1024"}'
+if ($LASTEXITCODE -ne 0) { Write-Log "WARNING: MaxMemoryPerShellMB failed (non-critical)" }
 
-$listenerCheck = winrm enumerate winrm/config/listener 2>&1
-Write-Log "Current WinRM listeners:`n$listenerCheck"
+winrm set winrm/config/service '@{AllowUnencrypted="true"}'
+if ($LASTEXITCODE -ne 0) { Write-Log "WARNING: AllowUnencrypted failed" }
 
-# Confirm HTTP:5985 is present
-$httpListener = $listenerCheck | Select-String "Transport = HTTP" -Quiet
-if ($httpListener) {
-    Write-Log "HTTP listener on port 5985: OK"
-} else {
-    Write-Log "WARNING: No HTTP listener found on port 5985"
+winrm set winrm/config/service/auth '@{Basic="true"}'
+if ($LASTEXITCODE -ne 0) { Write-Log "WARNING: Basic auth failed" }
+
+# 3. Create self-signed cert and HTTPS listener (optional, but part of the proven script)
+try {
+    $cert = New-SelfSignedCertificate -DnsName $env:COMPUTERNAME -CertStoreLocation Cert:\LocalMachine\My
+    New-Item -Path WSMan:\Localhost\Listener -Transport HTTPS -Address * -CertificateThumbprint $cert.Thumbprint -Force -ErrorAction SilentlyContinue
+    Write-Log "HTTPS listener created with self-signed cert."
+} catch {
+    Write-Log "HTTPS listener setup had issues (non-critical, HTTP still works): $_"
 }
 
-# ---- Restart WinRM to ensure all auth config changes take effect ----
-Write-Log "Restarting WinRM service to apply all configuration changes..."
-Restart-Service WinRM
+# 4. Windows Firewall rules
+try {
+    New-NetFirewallRule -DisplayName "WinRM HTTP"  -Direction Inbound -Protocol TCP -LocalPort 5985 -Action Allow -ErrorAction SilentlyContinue
+    New-NetFirewallRule -DisplayName "WinRM HTTPS" -Direction Inbound -Protocol TCP -LocalPort 5986 -Action Allow -ErrorAction SilentlyContinue
+    Write-Log "Firewall rules created."
+} catch {
+    Write-Log "Firewall rules had issues (continuing): $_"
+}
+
+# 5. Restart WinRM service to apply ALL changes
+Write-Log "Restarting WinRM service..."
+Restart-Service WinRM -Force
 Start-Sleep -Seconds 3
-
-# Verify WinRM is running
 $winrmStatus = (Get-Service WinRM).Status
 Write-Log "WinRM service status after restart: $winrmStatus"
 
-# ---- Done ----
+# 6. Verify
+try {
+    $listeners = winrm enumerate winrm/config/Listener
+    Write-Log "Current WinRM listeners:`n$listeners"
+} catch {
+    Write-Log "Could not enumerate listeners (continuing)"
+}
+
 Write-Log "=== UserData completed successfully ==="
 exit 0
 </powershell>

@@ -171,9 +171,10 @@ resource "aws_spot_instance_request" "windows" {
   instance_interruption_behavior = "terminate"
 
   # User data – enable WinRM so Ansible can connect
-  user_data = base64encode(templatefile("${path.module}/userdata.ps1", {
+  # NOTE: Terraform AWS provider base64-encodes this automatically
+  user_data = templatefile("${path.module}/userdata.ps1", {
     ansible_password = var.ansible_windows_password
-  }))
+  })
 
   root_block_device {
     volume_type           = "gp3"
