@@ -1,3 +1,4 @@
+<powershell>
 # -------------------------------------------------------
 # userdata.ps1
 # Windows EC2 UserData — runs as SYSTEM during first boot.
@@ -91,6 +92,16 @@ if ($httpListener) {
     Write-Log "WARNING: No HTTP listener found on port 5985"
 }
 
+# ---- Restart WinRM to ensure all auth config changes take effect ----
+Write-Log "Restarting WinRM service to apply all configuration changes..."
+Restart-Service WinRM
+Start-Sleep -Seconds 3
+
+# Verify WinRM is running
+$winrmStatus = (Get-Service WinRM).Status
+Write-Log "WinRM service status after restart: $winrmStatus"
+
 # ---- Done ----
 Write-Log "=== UserData completed successfully ==="
 exit 0
+</powershell>
