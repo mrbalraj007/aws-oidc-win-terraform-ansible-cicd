@@ -1,4 +1,4 @@
-name: Terraform Create
+name: 01-Terraform-Create
 
 on:
   push:

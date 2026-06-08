@@ -1,8 +1,8 @@
-name: Ansible Provision
+name: 02-Ansible-Provision
 
 on:
   workflow_run:
-    workflows: ["Terraform Create"]
+    workflows: ["01-Terraform-Create"]
     types:
       - completed
 
@@ -50,7 +50,7 @@ jobs:
         run: |
           ./scripts/04_wait_for_winrm.sh \
             "${{ steps.windows_ip.outputs.windows_ip }}" \
-            300 \
+            600 \
             "${{ secrets.TF_VAR_ansible_windows_password }}"
 
       - name: Create static inventory from IP
